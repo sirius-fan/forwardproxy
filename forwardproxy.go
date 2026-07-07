@@ -32,6 +32,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -550,6 +551,7 @@ match:
 		return nil, caddyhttp.Error(http.StatusBadGateway,
 			fmt.Errorf("lookup of %s failed: %v", host, err))
 	}
+	preferIPv4(IPs)
 
 	// This is net.Dial's default behavior: if the host resolves to multiple IP addresses,
 	// Dial will try each IP address in order until one succeeds
@@ -565,6 +567,12 @@ match:
 	}
 
 	return nil, caddyhttp.Error(http.StatusForbidden, fmt.Errorf("no allowed IP addresses for %s", host))
+}
+
+func preferIPv4(IPs []net.IP) {
+	sort.SliceStable(IPs, func(i, j int) bool {
+		return IPs[i].To4() != nil && IPs[j].To4() == nil
+	})
 }
 
 func (h Handler) hostIsAllowed(hostname string, ip net.IP) bool {

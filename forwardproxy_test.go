@@ -178,6 +178,29 @@ func responseExpected(res *http.Response, expectedResponse []byte) error {
 	return nil
 }
 
+func TestPreferIPv4(t *testing.T) {
+	IPs := []net.IP{
+		net.ParseIP("2001:db8::1"),
+		net.ParseIP("203.0.113.2"),
+		net.ParseIP("2001:db8::2"),
+		net.ParseIP("198.51.100.9"),
+	}
+
+	preferIPv4(IPs)
+
+	expected := []string{
+		"203.0.113.2",
+		"198.51.100.9",
+		"2001:db8::1",
+		"2001:db8::2",
+	}
+	for i, want := range expected {
+		if got := IPs[i].String(); got != want {
+			t.Fatalf("IP #%d: expected %s, got %s", i, want, got)
+		}
+	}
+}
+
 func TestPassthrough(t *testing.T) {
 	client := &http.Client{Transport: testTransport, Timeout: 2 * time.Second}
 	resp, err := client.Get("https://" + caddyForwardProxy.addr)
